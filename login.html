@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RD PO Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body{font-family:'IBM Plex Sans Thai',sans-serif}</style>
+</head>
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+    <main class="w-full max-w-5xl grid md:grid-cols-[1.1fr_.9fr] bg-white border border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+        <section class="bg-slate-900 text-white p-8 md:p-10 flex flex-col justify-between min-h-[520px]">
+            <div>
+                <div class="inline-flex items-center justify-center h-11 px-4 rounded-lg bg-blue-600 font-bold tracking-wide">RD PO</div>
+                <h1 class="mt-8 text-3xl font-bold leading-tight">ระบบจัดการและติดตามสถานะ PO</h1>
+                <p class="mt-3 text-slate-300 text-sm leading-6">สำหรับคีย์ข้อมูล PO Service / PO Asset, จัดการ Master Data และติดตามสถานะงานจัดซื้อในหน้าเดียว</p>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-xs">
+                <div class="rounded-lg border border-slate-700 p-3"><p class="text-slate-400">Role</p><p class="font-semibold mt-1">Admin / Editor / Viewer</p></div>
+                <div class="rounded-lg border border-slate-700 p-3"><p class="text-slate-400">Data</p><p class="font-semibold mt-1">SQLite + Excel Export</p></div>
+                <div class="rounded-lg border border-slate-700 p-3"><p class="text-slate-400">Workflow</p><p class="font-semibold mt-1">Service / Asset</p></div>
+            </div>
+        </section>
+
+        <section class="p-8 md:p-10">
+            <h2 class="text-xl font-bold text-slate-900">เข้าสู่ระบบ</h2>
+            <p class="text-sm text-slate-500 mt-1">Admin เดิมยังสามารถใช้บัญชีเดิมเพื่อเข้าจัดการ User ได้</p>
+
+            {% if message %}
+            <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ message }}</div>
+            {% endif %}
+            {% if error %}
+            <div class="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ error }}</div>
+            {% endif %}
+
+            <form action="/login" method="POST" class="mt-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Username / Email</label>
+                    <input type="text" name="username" required autocomplete="username" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="adminit หรือ email">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" name="password" required autocomplete="current-password" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Password">
+                </div>
+                <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700">เข้าสู่ระบบ</button>
+            </form>
+
+            <div class="mt-5 flex items-center justify-between text-sm">
+                <a href="/forgot-password" class="font-semibold text-slate-600 hover:text-blue-700">Forgot Password</a>
+                <a href="/signup" class="font-semibold text-blue-700 hover:text-blue-800">Sign up User ใหม่</a>
+            </div>
+
+            <div class="mt-8 rounded-lg bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600">
+                <p class="font-bold text-slate-800">Admin เริ่มต้น</p>
+                <p class="mt-1">บัญชีจากระบบเดิมจะถูกย้ายเข้า user table อัตโนมัติเมื่อเปิดแอป</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

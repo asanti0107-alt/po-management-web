@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Equipment - RD PO Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'IBM Plex Sans Thai',sans-serif}.mono{font-family:'IBM Plex Mono',monospace}</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <nav class="bg-slate-950 text-white px-6 py-3 flex items-center justify-between">
+        <div><p class="text-xs text-slate-400">RD PO Management</p><h1 class="text-base font-bold">Transfer Equipment</h1></div>
+        <a href="/dashboard" class="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Dashboard</a>
+    </nav>
+    {% if error %}<script>alert({{ error|tojson }});</script>{% endif %}
+    {% if message %}<script>alert({{ message|tojson }});</script>{% endif %}
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5">
+        <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="text-lg font-bold text-slate-900">Plan Transfer</h2>
+            <p class="text-xs text-slate-500 mt-1">สำหรับย้ายอุปกรณ์จาก 7590 หรือ 7593 ไป Store ในรอบ Upgrade ถัดไป</p>
+            <form action="/transfer-equipment/add" method="POST" class="mt-5 space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">From</label>
+                    <select name="source_location" class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white">
+                        <option value="7590">7590 - Head Office</option>
+                        <option value="7593">7593 - IT Warehouse</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">To Store</label>
+                    <select name="target_cost_center_id" class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white">
+                        {% for cc in cost_centers %}
+                        <option value="{{ cc.cost_center_id }}">{{ cc.cost_center_id }} - {{ cc.cost_center_id2 }} - {{ cc.cost_center_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Equipment</label><input name="item_name" required class="w-full rounded-lg border border-slate-300 p-2 text-sm" placeholder="เช่น POS, Printer, Router"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Asset No.</label><input name="asset_no" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Serial No.</label><input name="serial_no" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Quantity</label><input type="number" step="any" name="quantity" value="1" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Note</label><textarea name="note" rows="3" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></textarea></div>
+                <button class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700">Add Transfer</button>
+            </form>
+        </section>
+        <section class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div><h2 class="text-lg font-bold text-slate-900">Transfer List</h2><p class="text-xs text-slate-500">Sync จาก PO จะดึงรายการ 7590/7593 และแยก Quantity เป็น 1 unit ต่อ row</p></div>
+                <form action="/transfer-equipment/sync-from-po" method="POST">
+                    <button class="rounded-lg bg-cyan-600 px-3 py-2 text-xs font-bold text-white hover:bg-cyan-700">Sync From PO 7590/7593</button>
+                </form>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600"><tr><th class="text-left px-4 py-3">Date</th><th class="text-left px-4 py-3">From</th><th class="text-left px-4 py-3">To Store</th><th class="text-left px-4 py-3">Equipment</th><th class="text-left px-4 py-3">Asset / Serial</th><th class="text-center px-4 py-3">Qty</th><th class="text-left px-4 py-3">Note</th><th class="text-center px-4 py-3">Status</th><th class="text-right px-4 py-3">Save</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for t in transfers %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 mono text-xs">{{ t.created_at }}</td>
+                            <td class="px-4 py-3 mono font-bold">{{ t.source_location }}</td>
+                            <td class="px-4 py-3">
+                                <form id="transfer-{{ t.id }}" action="/transfer-equipment/update-status" method="POST"></form>
+                                <input form="transfer-{{ t.id }}" type="hidden" name="transfer_id" value="{{ t.id }}">
+                                <select form="transfer-{{ t.id }}" name="target_cost_center_id" class="w-48 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs">
+                                    <option value="">เลือก Store</option>
+                                    {% for cc in cost_centers %}
+                                    <option value="{{ cc.cost_center_id }}" {% if t.target_cost_center_id == cc.cost_center_id %}selected{% endif %}>{{ cc.cost_center_id }} - {{ cc.cost_center_id2 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">{{ t.item_name }}{% if t.quotation_no %}<div class="mono text-xs text-slate-400">Q: {{ t.quotation_no }}</div>{% endif %}</td>
+                            <td class="px-4 py-3 mono text-xs">
+                                <input form="transfer-{{ t.id }}" name="asset_no" value="{{ t.asset_no or '' }}" placeholder="Asset" class="mb-1 w-28 rounded border border-slate-300 px-2 py-1">
+                                <input form="transfer-{{ t.id }}" name="serial_no" value="{{ t.serial_no or '' }}" placeholder="Serial" class="w-28 rounded border border-slate-300 px-2 py-1">
+                            </td>
+                            <td class="px-4 py-3 text-center mono">1</td>
+                            <td class="px-4 py-3"><input form="transfer-{{ t.id }}" name="note" value="{{ t.note or '' }}" class="w-48 rounded-lg border border-slate-300 px-2 py-1.5 text-xs"></td>
+                            <td class="px-4 py-3 text-center">
+                                <select form="transfer-{{ t.id }}" name="transfer_status" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-bold">
+                                    {% for st in ['Plan','Packed','Transferred','Received','Cancel'] %}
+                                    <option value="{{ st }}" {% if t.transfer_status == st %}selected{% endif %}>{{ st }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td class="px-4 py-3 text-right"><button form="transfer-{{ t.id }}" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800">Save</button></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not transfers %}<tr><td colspan="9" class="px-4 py-10 text-center text-slate-400">ยังไม่มีรายการ Transfer</td></tr>{% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

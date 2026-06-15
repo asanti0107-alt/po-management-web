@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create PO Asset - RD PO Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'IBM Plex Sans Thai',sans-serif}.mono{font-family:'IBM Plex Mono',monospace}</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <nav class="bg-slate-950 text-white px-6 py-3 flex items-center justify-between">
+        <div><p class="text-xs text-slate-400">RD PO Management</p><h1 class="text-base font-bold">Create PO Asset</h1></div>
+        <a href="/dashboard" class="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Dashboard</a>
+    </nav>
+    {% if error %}<script>alert({{ error|tojson }});</script>{% endif %}
+    {% if message %}<script>alert({{ message|tojson }});</script>{% endif %}
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5">
+        {% if can_edit %}
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <h2 class="text-lg font-bold text-blue-700">ข้อมูล PO Asset</h2>
+            <form action="/po-asset/add" method="POST" class="mt-5 space-y-3" onsubmit="return confirmDuplicateQuotation(this, assetQuotes, 'PO Asset')">
+                <input type="hidden" name="confirm_duplicate" value="0">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Vendor</label>
+                    <select name="vendor_code" id="vAssetSelect" onchange="updateAssetVendor()" required class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white">
+                        <option value="">เลือก Vendor</option>
+                        {% for v in vendors %}<option value="{{ v.vendor_code }}">{{ v.vendor_name }}</option>{% endfor %}
+                    </select>
+                    <input type="hidden" name="vendor_name" id="vAssetNameHidden">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Material</label>
+                    <select name="material_code" id="mAssetSelect" onchange="updateAssetMaterial()" required class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white">
+                        <option value="">เลือก Material</option>
+                        {% for m in materials %}<option value="{{ m.material_code }}">{{ m.material_name }}</option>{% endfor %}
+                    </select>
+                    <input type="hidden" name="material_name" id="mAssetNameHidden">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Quantity</label><input type="number" step="any" name="quantity" value="1" required class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Tax Code</label><select name="tax_code" class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white"><option value="I2">I2</option><option value="I3">I3</option></select></div>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Price for ZTAX</label><input type="number" step="any" name="price_ztax" required class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Detail</label><input type="text" name="detail" maxlength="40" required class="w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-600 mb-1">Project</label><select name="project" class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white"><option value="NB">NB</option><option value="IE">IE</option><option value="onsite">onsite</option></select></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Quotation No.</label><input type="text" name="quotation_no" required class="mono w-full rounded-lg border border-slate-300 p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold text-slate-600 mb-1">Cost Center</label><select name="cost_center_id" class="w-full rounded-lg border border-slate-300 p-2 text-sm bg-white">{% for cc in cost_centers %}<option value="{{ cc.cost_center_id }}">{{ cc.cost_center_id }}</option>{% endfor %}</select></div>
+                </div>
+                <button class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700">บันทึก PO Asset</button>
+            </form>
+        </section>
+        {% endif %}
+
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden {% if not can_edit %}lg:col-span-2{% endif %}">
+            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                <div><h2 class="text-lg font-bold text-slate-900">รายการ PO Asset</h2><p class="text-xs text-slate-500">Download Template, Import File และ Export ตาม format ที่กำหนด</p></div>
+                <div class="flex flex-wrap items-center gap-2">
+                    {% if can_edit %}
+                    <form id="asset-export-form" action="/po-asset/export-selected" method="POST"></form>
+                    <a href="/po-asset/template" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">Download Template</a>
+                    <button form="asset-export-form" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">Export Selected</button>
+                    <form action="/po-asset/import" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                        <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="text-xs">
+                        <button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">Import File</button>
+                    </form>
+                    {% endif %}
+                    <a href="/po-asset/export" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800">Export Excel</a>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600"><tr>{% if can_edit %}<th class="text-center px-4 py-3"><input type="checkbox" class="h-4 w-4" onclick="toggleAllByForm('asset-export-form', this.checked)"></th>{% endif %}<th class="text-left px-4 py-3">Quotation</th><th class="text-left px-4 py-3">Export Count</th><th class="text-left px-4 py-3">Vendor</th><th class="text-left px-4 py-3">Material</th><th class="text-left px-4 py-3">Cost Center</th><th class="text-left px-4 py-3">Project</th><th class="text-right px-4 py-3">Price</th>{% if can_edit %}<th class="text-right px-4 py-3">Action</th>{% endif %}</tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for a in assets %}
+                        <tr class="hover:bg-slate-50">{% if can_edit %}<td class="px-4 py-3 text-center"><input form="asset-export-form" type="checkbox" name="selected_ids" value="{{ a.id }}" class="h-4 w-4"></td>{% endif %}<td class="px-4 py-3 mono">{% if a.quotation_no in duplicate_quotes %}<span class="rounded bg-amber-100 px-2 py-1 font-bold text-amber-800">{{ a.quotation_no }}</span>{% else %}{{ a.quotation_no }}{% endif %}</td><td class="px-4 py-3 mono text-xs font-bold text-slate-600">{{ export_counts.get(a.quotation_no, 0) }}</td><td class="px-4 py-3">{{ a.vendor_name }}</td><td class="px-4 py-3">{{ a.material_name }}</td><td class="px-4 py-3 mono">{{ a.cost_center_id }}</td><td class="px-4 py-3">{{ a.project }}</td><td class="px-4 py-3 text-right mono">{{ "{:,.2f}".format(a.price_ztax|float) }}</td>{% if can_edit %}<td class="px-4 py-3 text-right">{% if a.quotation_no in duplicate_quotes %}<form action="/po-asset/delete/{{ a.id }}" method="POST" onsubmit="return confirm('ลบรายการ PO Asset Quotation {{ a.quotation_no }} ?')"><button class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700" title="ลบรายการซ้ำ">ลบ</button></form>{% endif %}</td>{% endif %}</tr>
+                        {% endfor %}
+                        {% if not assets %}<tr><td colspan="{% if can_edit %}9{% else %}7{% endif %}" class="px-4 py-10 text-center text-slate-400">ยังไม่มีรายการ PO Asset</td></tr>{% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script>
+        const assetQuotes = {{ existing_quotes | tojson | safe }};
+        function confirmDuplicateQuotation(form, existingQuotes, label){
+            const input = form.querySelector('[name="quotation_no"]');
+            const hidden = form.querySelector('[name="confirm_duplicate"]');
+            const quote = (input?.value || '').trim();
+            if (quote && existingQuotes.includes(quote)) {
+                const ok = confirm(`Quotation ${quote} มีอยู่ใน ${label} แล้ว ต้องการบันทึกซ้ำหรือไม่?`);
+                hidden.value = ok ? '1' : '0';
+                return ok;
+            }
+            hidden.value = '0';
+            return true;
+        }
+        function updateAssetVendor(){const s=document.getElementById('vAssetSelect');document.getElementById('vAssetNameHidden').value=s.options[s.selectedIndex].text}
+        function updateAssetMaterial(){const s=document.getElementById('mAssetSelect');document.getElementById('mAssetNameHidden').value=s.options[s.selectedIndex].text}
+        function toggleAllByForm(formId, checked) {
+            document.querySelectorAll(`input[type="checkbox"][form="${formId}"]`).forEach(cb => cb.checked = checked);
+        }
+    </script>
+</body>
+</html>

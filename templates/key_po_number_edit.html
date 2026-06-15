@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit PO Number - RD PO Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'IBM Plex Sans Thai',sans-serif}.mono{font-family:'IBM Plex Mono',monospace}</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+    <nav class="bg-slate-950 text-white px-6 py-3 flex items-center justify-between">
+        <div><p class="text-xs text-slate-400">RD PO Management</p><h1 class="text-base font-bold">Edit PO Number</h1></div>
+        <a href="/key-po-number" class="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Key PO Number</a>
+    </nav>
+    <main class="max-w-6xl mx-auto p-6">
+        <form action="/key-po-number/edit-save" method="POST" class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">แก้ไขเลข PO ที่บันทึกแล้ว</h2>
+                    <p class="text-sm text-slate-500">แก้ไขได้หลายรายการ แล้วกด Save ครั้งเดียว ระบบจะกลับไปหน้า Key PO Number</p>
+                </div>
+                <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700">Save All</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr><th class="text-left px-4 py-3">Quotation</th><th class="text-left px-4 py-3">Vendor</th><th class="text-center px-4 py-3">Lines</th><th class="text-left px-4 py-3">PO Number</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for q in quotations %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 mono font-bold">{{ q.quotation_no }}<input type="hidden" name="quotation_no" value="{{ q.quotation_no }}"></td>
+                            <td class="px-4 py-3">{{ q.vendor_name }}</td>
+                            <td class="px-4 py-3 text-center mono">{{ q.line_count }}</td>
+                            <td class="px-4 py-3"><input type="text" name="po_no" value="{{ q.po_no }}" class="mono w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not quotations %}
+                        <tr><td colspan="4" class="px-4 py-10 text-center text-slate-400">ยังไม่มี Quotation ที่บันทึกเลข PO แล้ว</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </main>
+</body>
+</html>
